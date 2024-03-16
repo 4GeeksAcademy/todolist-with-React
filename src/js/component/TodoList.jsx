@@ -1,12 +1,12 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 
 const TodoList = () => {
     const [inputValue, setInputValue] = useState("");
     const [todoList, setTodoList] = useState([]);
     const [hover, setHover] = useState(null);
 
-    function createUser () {
-        fetch('https://playground.4geeks.com/apis/fake/todos/user/ines5388',{
+    const createUser = () => {
+        fetch('https://playground.4geeks.com/apis/fake/todos/user/ines5388', { 
             method:'POST',
             body: JSON.stringify([]),
             headers:{'Content-Type': 'application/json'}
@@ -14,27 +14,26 @@ const TodoList = () => {
         .then((response) => response.json())
         .then((data) => console.log(data))
         .catch((error) => console.log("error"))
-    }
+    };
 
-    function getList () {
-        fetch('https://playground.4geeks.com/apis/fake/todos/user/ines5388',{
+    const getTodos = () => {
+        fetch('https://playground.4geeks.com/apis/fake/todos/user/ines5388', {
             method:'GET',
         })
         .then((response) => {
-            if(response.status === 404) {
-            createUser()
+            if (response.status === 404) {
+                createUser();
+                return [];
             }
-            return (response.json())
+            return response.json();
         })
-        .then((data) => setTodoList(data))
+        .then((data) => {
+            setTodoList(data);
+        })
         .catch((error) => console.log(error))
-    }
+    };
 
-    useEffect(() => {
-        getList();
-    },[]);
-
-    function updateTodos () {  
+    const updateTodos = () => {  
         fetch('https://playground.4geeks.com/apis/fake/todos/user/ines5388', {
             method:'PUT',
             body: JSON.stringify(todoList),
@@ -42,38 +41,55 @@ const TodoList = () => {
                 "Content-Type": "application/json"
             }
         })
-        .then(response => {response.json()})
-        .then(data => {console.log(data)})
-        .catch(error => {console.log(error);})
+        .then((response) => {
+            if (response.status === 404) {
+                createUser();
+                return todoList;
+            }
+            return response.json();
+        })
+        .then(data => console.log(data))
+        .catch(error => console.log(error))
+    };
 
-    }
-
-    useEffect(() => {
-        updateTodos()
-    },[todoList]);
-
-
-    function cleanAllTodos () {
+    const cleanAllTodos = () => {
         fetch('https://playground.4geeks.com/apis/fake/todos/user/ines5388', {
           method: "DELETE",
           headers:{
             "Content-Type": "application/json"
             }
         })
-          .then(resp => resp.json())
-          .then(data => setTodoList([]))
-          .catch(error => console.log(error));
-      };
+        .then(response => response.json())
+        .then(data => setTodoList([]))
+        .catch(error => console.log(error));
+    };
 
     const onPressEnter = (e) => {
         if (e.key === "Enter") {
-            const nuevoArray = todoList.concat({ label: e.target.value, done:false});
-            setTodoList(nuevoArray);
+            setTodoList(todoList.concat({ label: e.target.value, done:false}));
             setInputValue("");
         }
-    }
+    };
 
-    return(
+    const onDeleteIconClick = (elem, index) => {
+        if (todoList.length === 1) {
+            cleanAllTodos();
+        } else {
+            setTodoList(todoList.filter((elem, i) => index !== i));
+        }
+    };
+
+    useEffect(() => {
+        getTodos();
+    }, []);
+
+    useEffect(() => {
+        if (todoList.length > 0) {
+            updateTodos();
+        }
+    }, [todoList]);
+
+    return (
         <div className="principal">
             <p className="fw-lighter">todos</p>
             <div className="tarjeta">
@@ -93,10 +109,9 @@ const TodoList = () => {
                             onMouseLeave={() => setHover(null)}
                         >
                             {elem.label} 
-                                <i className={`fas fa-times icono ${index === hover ? "hover" : "" }`}
-                                    onClick={() => setTodoList(todoList.filter((elem, i) => index !== i))}
-                                    >
-                                </i>
+                            <i className={`fas fa-times icono ${index === hover ? "hover" : "" }`}
+                                onClick={() => onDeleteIconClick(elem, index)}
+                            />
                         </li>
                     )) : (
                         <li className="agregarTarea">No hay tareas, añadir tareas</li>
@@ -104,10 +119,8 @@ const TodoList = () => {
                 </ul>    
                 <div className="contador">{todoList.length} item left</div>
                 {todoList.length > 0 && (
-                <button className="btn btn-danger m-2" onClick={cleanAllTodos}>
-                  Clean All Tasks
-                </button>
-              )}
+                    <button className="btn btn-danger m-2" onClick={cleanAllTodos}>Clean All Tasks</button>
+                )}
             </div>
             <div className="tarjeta2"></div>
             <div className="tarjeta3"></div>
